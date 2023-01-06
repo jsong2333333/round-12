@@ -145,7 +145,7 @@ class Detector(AbstractDetector):
         _, model_repr, _ = load_model(model_filepath)
 
         logging.info("Extracting model features")
-        X = fe.get_predict_model_features(model_repr)
+        X = fe.get_model_features(model_repr)
 
         logging.info('Loading classifier')
         potential_reconfig_model_filepath = join(self.learned_parameters_dirpath, 'clf.joblib')

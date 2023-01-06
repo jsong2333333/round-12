@@ -12,15 +12,19 @@ def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict
         y += model_ground_truth
 
         for model_repr in model_reprs:
-            X.append(_get_weight_features(model_repr))
+            X.append(get_model_features(model_repr, infer=False))
 
     return np.asarray(X), np.asarray(y)
 
 
-def get_predict_model_features(model_repr : dict):
+def get_model_features(model_repr : dict, infer=True):
     features = []
     features += _get_weight_features(model_repr)
-    return np.asarray([features])
+    features += _get_eigen_features(model_repr)
+    if infer:
+        return np.asarray([features])
+    else:
+        return features
 
 
 def _get_weight_features(model_repr : dict, layers=['fc1.weight', 'fc1.bias'], axis=0) -> list:
@@ -44,6 +48,12 @@ def _get_weight_features(model_repr : dict, layers=['fc1.weight', 'fc1.bias'], a
             params.append(param.sum().tolist())
             params.append((np.linalg.norm(param.reshape(param.shape[0], -1), ord='fro')**2/np.linalg.norm(param.reshape(param.shape[0], -1), ord=2)**2).tolist())
     return params
+
+
+def _get_eigen_features(model_repr: dict) -> list:
+    fc1_weight = model_repr['fc1.weight'].T.reshape(135, 10, 10)
+    _, s, _ = np.linalg.svd(fc1_weight)
+    return s.flatten().tolist()
 
 
 if __name__ =='__main__':

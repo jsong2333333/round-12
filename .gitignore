@@ -5,3 +5,4 @@ projects/weight_analysis/for_container/archs.py
 projects/weight_analysis/for_container/utils
 projects/weight_analysis/for_container/__pycache__
 projects/weight_analysis/extracted_source
+projects/weight_analysis/capstone.pem
