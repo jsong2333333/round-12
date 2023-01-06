@@ -1,0 +1,27 @@
+Bootstrap: docker
+From: python:3.9
+
+%files
+    ./detector.py /
+    ./feature_extractor.py /
+    ./metaparameters.json /
+    ./metaparameters_schema.json /
+    ./learned_parameters /
+    ./archs.py /
+    ./entrypoint.py /
+    ./utils /
+
+
+%post
+    apt-get update
+    apt-get install -y ffmpeg libsm6 libxext6
+
+    pip install --upgrade pip
+    pip3 install --upgrade pip
+    pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+    pip install tqdm jsonschema jsonargparse
+    pip install scikit-learn==1.1.1
+
+
+%runscript
+    exec python3 /entrypoint.py "$@"

@@ -1,0 +1,7 @@
+projects/weight_analysis/src/__pycache__
+projects/weight_analysis/src/archs.py
+projects/weight_analysis/for_container/entrypoint.py
+projects/weight_analysis/for_container/archs.py
+projects/weight_analysis/for_container/utils
+projects/weight_analysis/for_container/__pycache__
+projects/weight_analysis/extracted_source
