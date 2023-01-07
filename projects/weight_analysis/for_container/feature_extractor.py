@@ -19,18 +19,20 @@ def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict
 
 def get_model_features(model_repr : dict, infer=True):
     features = []
-    features += _get_weight_features(model_repr)
-    features += _get_eigen_features(model_repr)
+    features += _get_weight_features(model_repr, layer_ind=[0, 1])
+    features += _get_multiplied_weight_features(model_repr)
+    # features += _get_eigen_features(model_repr)
     if infer:
         return np.asarray([features])
     else:
         return features
 
 
-def _get_weight_features(model_repr : dict, layers=['fc1.weight', 'fc1.bias'], axis=0) -> list:
+def _get_weight_features(model_repr : dict, layer_ind=[0, 1, -2, -1], axis=0) -> list:
     params = []
-    for layer in layers:
-        param = model_repr[layer]
+    od_keys = [k for k in model_repr.keys()]
+    for ind in layer_ind:
+        param = model_repr[od_keys[ind]]
         if len(param.shape) > 1:
             params += np.amax(param, axis=axis).tolist()
             params += np.mean(param, axis=axis).tolist()
@@ -48,6 +50,14 @@ def _get_weight_features(model_repr : dict, layers=['fc1.weight', 'fc1.bias'], a
             params.append(param.sum().tolist())
             params.append((np.linalg.norm(param.reshape(param.shape[0], -1), ord='fro')**2/np.linalg.norm(param.reshape(param.shape[0], -1), ord=2)**2).tolist())
     return params
+
+
+def _get_multiplied_weight_features(model_repr: dict) -> list:
+    reversed_order_key = [k for k in model_repr.keys() if 'weight' in k][::-1]
+    ret = None
+    for rk in reversed_order_key:
+        ret = model_repr[rk] if ret is None else (ret @ model_repr[rk])
+    return ret.flatten().tolist()
 
 
 def _get_eigen_features(model_repr: dict) -> list:
