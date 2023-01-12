@@ -24,7 +24,7 @@ ORIGINAL_LEARNED_PARAM_DIR = './learned_parameters'
 param_grid = {'gbm__learning_rate': np.arange(.005, .0251, .005), 
               'gbm__n_estimators': range(500, 1001, 100), 
               'gbm__max_depth': range(2, 5), 
-              'gbm__max_features': range(300, 651, 50),
+              'gbm__max_features': range(50, 651, 100),
               'gbm__min_samples_split': range(20, 101, 10),
               'gbm__min_samples_leaf': range(10, 51, 5)}
 
