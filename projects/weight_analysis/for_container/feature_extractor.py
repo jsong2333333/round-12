@@ -20,7 +20,10 @@ def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict
 def get_model_features(model_repr : dict, infer=True):
     features = []
     # features += _get_weight_features(model_repr, layer_ind=[0, 1])
-    features += _get_multiplied_weight_features(model_repr)
+    weight = _get_multiplied_weight_features(model_repr, eigen=False)
+    features += weight.flatten().tolist()
+    features += _get_fft_from_weight_features(weight).tolist()
+    features += _get_multiplied_weight_features(model_repr, eigen=True)
     # features += _get_eigen_features(model_repr)
     if infer:
         return np.asarray([features])
@@ -58,12 +61,18 @@ def _get_multiplied_weight_features(model_repr: dict, eigen=True) -> list:
     if eigen:
         for rk in reversed_order_key[1:]:
             ret = model_repr[rk] if ret is None else (ret @ model_repr[rk])
-        _, s, _ = np.linalg.svd(ret.T.reshape(135, 10, 10))
-        return s.flatten().tolist()
+        _, s, _ = np.linalg.svd(ret)
+        return s.flatten().tolist()[:45]
     else:
         for rk in reversed_order_key:
-            ret = model_repr[rk] if ret is None else (ret @ model_repr[rk])
-        return ret.flatten().tolist()
+            ret = model_repr[rk] / np.linalg.norm(model_repr[rk],2) if ret is None else (ret @ (model_repr[rk]/ np.linalg.norm(model_repr[rk],2)))
+        return ret
+
+
+def _get_fft_from_weight_features(weight) -> list:
+    ft = np.fft.ifftshift(weight)
+    ft = np.fft.fft2(ft)
+    return np.abs(np.fft.fftshift(ft).flatten())
 
 
 def _get_eigen_features(model_repr: dict) -> list:
