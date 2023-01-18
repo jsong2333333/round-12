@@ -19,11 +19,11 @@ def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict
 
 def get_model_features(model_repr : dict, infer=True):
     features = []
-    features += _get_weight_features(model_repr)
-    # weight = _get_multiplied_weight_features(model_repr, eigen=False)
-    # features += weight.flatten().tolist()
-    # features += _get_fft_from_weight_features(weight).tolist()
-    # features += _get_multiplied_weight_features(model_repr, eigen=True)
+    # features += _get_weight_features(model_repr)
+    weight = _get_multiplied_weight_features(model_repr, eigen=False)
+    features += weight.flatten().tolist()
+    features += _get_fft_from_weight_features(weight).tolist()
+    features += _get_multiplied_weight_features(model_repr, eigen=True)
     # features += _get_eigen_features(model_repr)
     if infer:
         return np.asarray([features])
