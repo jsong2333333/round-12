@@ -3,7 +3,7 @@
     "title": "Trojan Detection Container (ICSI)",    
     "technique": "Weight Analysis with Gradient Boosting Classifier",
     "technique_description": "Extracts eigen values from the matrix-multiplied-weights for each model; Trains the features on the tuned Gradient Boosting Classifier.",
-    "technique_changes": "Changing the tuned parameters and the corresponding classifier",
+    "technique_changes": "Changing the features extracted (weight statistics, eigen values, raw weights)",
     "commit_id": "",
     "repo_name": "https://github.com/jsong2333333/round-12",
     "required": [],

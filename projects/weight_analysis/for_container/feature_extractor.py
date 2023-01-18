@@ -19,11 +19,11 @@ def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict
 
 def get_model_features(model_repr : dict, infer=True):
     features = []
-    # features += _get_weight_features(model_repr, layer_ind=[0, 1])
-    weight = _get_multiplied_weight_features(model_repr, eigen=False)
-    features += weight.flatten().tolist()
-    features += _get_fft_from_weight_features(weight).tolist()
-    features += _get_multiplied_weight_features(model_repr, eigen=True)
+    features += _get_weight_features(model_repr)
+    # weight = _get_multiplied_weight_features(model_repr, eigen=False)
+    # features += weight.flatten().tolist()
+    # features += _get_fft_from_weight_features(weight).tolist()
+    # features += _get_multiplied_weight_features(model_repr, eigen=True)
     # features += _get_eigen_features(model_repr)
     if infer:
         return np.asarray([features])
@@ -31,27 +31,28 @@ def get_model_features(model_repr : dict, infer=True):
         return features
 
 
-def _get_weight_features(model_repr : dict, layer_ind=[0, 1, -2, -1], axis=0) -> list:
+def _get_weight_features(model_repr : dict, axis= 0) -> list:
+    reversed_order_key = [k for k in model_repr.keys() if 'weight' in k][::-1]
+    
+    weight = None
+    for rk in reversed_order_key[1:]:
+        weight = model_repr[rk] if weight is None else (weight @ model_repr[rk]) 
+
     params = []
-    od_keys = [k for k in model_repr.keys()]
-    for ind in layer_ind:
-        param = model_repr[od_keys[ind]]
-        if len(param.shape) > 1:
-            params += np.amax(param, axis=axis).tolist()
-            params += np.mean(param, axis=axis).tolist()
-            sub = np.mean(param, axis=axis) - np.median(param, axis=axis)
-            params += sub.tolist()
-            params += np.median(param, axis=axis).tolist()
-            params += np.sum(param, axis=axis).tolist()
-            params.append(np.linalg.norm(param, ord='fro')**2/np.linalg.norm(param, ord=2)**2)
-        else:
-            params.append(param.max().tolist())
-            params.append(param.mean().tolist())
-            sub = param.mean() - np.median(param)
-            params.append(sub.tolist())
-            params.append(np.median(param).tolist())
-            params.append(param.sum().tolist())
-            params.append((np.linalg.norm(param.reshape(param.shape[0], -1), ord='fro')**2/np.linalg.norm(param.reshape(param.shape[0], -1), ord=2)**2).tolist())
+    params += np.amax(weight, axis=axis).tolist()
+    params += np.mean(weight, axis=axis).tolist()
+    sub = np.mean(weight, axis=axis) - np.median(weight, axis=axis)
+    params += sub.tolist()
+    params += np.median(weight, axis=axis).tolist()
+    params += np.sum(weight, axis=axis).tolist()
+    params.append(np.linalg.norm(weight, ord='fro')**2/np.linalg.norm(weight, ord=2)**2)
+
+    _, s, _ = np.linalg.svd(weight)
+    params += s[:45].tolist()
+
+    weight = model_repr[reversed_order_key[0]] @ weight
+    params += weight.flatten().tolist()
+    
     return params
 
 
