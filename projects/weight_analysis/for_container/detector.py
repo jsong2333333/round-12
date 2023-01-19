@@ -69,19 +69,19 @@ class Detector(AbstractDetector):
         model_repr_dict, model_ground_truth_dict = load_models_dirpath(model_path_list)
 
         logging.info("Extracting features from models")
-        X, y = fe.get_features_and_labels(model_repr_dict, model_ground_truth_dict)
+        X_s, y_s, X_l, y_l = fe.get_features_and_labels(model_repr_dict, model_ground_truth_dict)
 
         logging.info("Automatically training GBM model")
         pipe = Pipeline(steps=[('gbm', GradientBoostingClassifier())])
                 
-        _, counts = np.unique(y, return_counts=True)
+        _, counts = np.unique(y_l, return_counts=True)
         kfold = min(min(counts), 5)
         if kfold < 2 or len(counts) != 2:
             logging.info(f'Not enough data points are given for auto-tuning the model.')
             return
 
         gsearch = GridSearchCV(estimator=pipe, param_grid=param_grid, scoring='neg_log_loss', n_jobs=-1, cv=kfold)
-        gsearch.fit(X, y)
+        gsearch.fit(X_l, y_l)
                 
         model = gsearch.best_estimator_
         metaparams = gsearch.best_params_
@@ -112,11 +112,11 @@ class Detector(AbstractDetector):
         model_repr_dict, model_ground_truth_dict = load_models_dirpath(model_path_list)
 
         logging.info("Extracting features from models")
-        X, y = fe.get_features_and_labels(model_repr_dict, model_ground_truth_dict)
+        X_s, y_s, X_l, y_l = fe.get_features_and_labels(model_repr_dict, model_ground_truth_dict)
 
         logging.info("Fitting GBM model in manual mode")
         model = GradientBoostingClassifier(**self.gbm_kwargs, random_state=0)
-        model.fit(X, y)
+        model.fit(X_l, y_l)
 
         logging.info("Saving GBM model")
         joblib.dump(model, join(self.learned_parameters_dirpath, 'clf.joblib'))
@@ -142,10 +142,11 @@ class Detector(AbstractDetector):
         """
 
         logging.info("Loading model for prediction")
-        _, model_repr, _ = load_model(model_filepath)
+        _, model_repr, model_class = load_model(model_filepath)
+        net = 'small_net' if int(model_class[3]) <=3 else 'large_net'
 
         logging.info("Extracting model features")
-        X = fe.get_model_features(model_repr)
+        X = fe.get_model_features(model_repr, model_class)
 
         logging.info('Loading classifier')
         potential_reconfig_model_filepath = join(self.learned_parameters_dirpath, 'clf.joblib')
@@ -153,7 +154,7 @@ class Detector(AbstractDetector):
             clf = joblib.load(potential_reconfig_model_filepath)
         else:
             logging.info('Using original classifier')
-            clf = joblib.load(join(ORIGINAL_LEARNED_PARAM_DIR, 'detector.joblib'))
+            clf = joblib.load(join(ORIGINAL_LEARNED_PARAM_DIR, f'{net}_detector.joblib'))
     
         logging.info('Detecting trojan probability')
         try:
