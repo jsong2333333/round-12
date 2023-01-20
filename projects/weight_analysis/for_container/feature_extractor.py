@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 DATA_PATH = '/scratch/data/TrojAI/cyber-pdf-dec2022-train/models/'
-NET_LEVEL = 2
+NET_LEVEL = 7
 
 
 def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict):

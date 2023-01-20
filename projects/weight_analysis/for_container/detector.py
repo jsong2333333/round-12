@@ -81,7 +81,7 @@ class Detector(AbstractDetector):
             return
 
         gsearch = GridSearchCV(estimator=pipe, param_grid=param_grid, scoring='neg_log_loss', n_jobs=-1, cv=kfold)
-        gsearch.fit(X_l, y_l)
+        gsearch.fit(X_s, y_s)
                 
         model = gsearch.best_estimator_
         metaparams = gsearch.best_params_
@@ -116,7 +116,7 @@ class Detector(AbstractDetector):
 
         logging.info("Fitting GBM model in manual mode")
         model = GradientBoostingClassifier(**self.gbm_kwargs, random_state=0)
-        model.fit(X_l, y_l)
+        model.fit(X_s, y_s)
 
         logging.info("Saving GBM model")
         joblib.dump(model, join(self.learned_parameters_dirpath, 'clf.joblib'))
