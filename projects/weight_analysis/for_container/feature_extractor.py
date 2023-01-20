@@ -2,6 +2,7 @@ import os
 import numpy as np
 
 DATA_PATH = '/scratch/data/TrojAI/cyber-pdf-dec2022-train/models/'
+NET_LEVEL = 2
 
 
 def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict):
@@ -10,7 +11,7 @@ def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict
     for model_arch, model_reprs in model_repr_dict.items():
         model_ground_truth = model_ground_truth_dict[model_arch]
         net = 'small_net'
-        if int(model_arch[3]) > 3:
+        if int(model_arch[3]) > NET_LEVEL:
             net = 'large_net'
 
         y[net] += model_ground_truth
@@ -24,14 +25,18 @@ def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict
 def get_model_features(model_repr: dict, model_class: str, infer=True):
     features = []
     ok = _get_ordered_key(model_repr)
-    norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
-    features += norm_mul_weight.flatten().tolist()
 
-    if int(model_class[3]) > 3:  #larger nets (excluding Net2 and Net 3)
+    if int(model_class[3]) > NET_LEVEL:  #larger nets (excluding Net2)
+        norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
+        features += norm_mul_weight.flatten().tolist()
         features += _get_fft_from_weight_features(norm_mul_weight)
         mul_weight = _get_multiplied_weight_features(model_repr, ok[1:])
         features += _get_eigen_from_weight_features(mul_weight)
         features += _get_stats_from_weight_features(mul_weight)
+    else:
+        for k in ['fc1.weight', 'fc1.bias']:
+            features += _get_stats_from_weight_features(model_repr[k])
+        features += _get_multiplied_weight_features(model_repr, ok).flatten().tolist()
     if infer:
         return np.asarray([features])
     else:
@@ -63,7 +68,10 @@ def _get_stats_from_weight_features(weight: np.ndarray, axis= (0,)) -> list:
     p_median = np.median(weight, axis=axis) 
     p_sub = p_mean - p_median
     p_sum = np.sum(weight, axis=axis)
-    p_norm = np.linalg.norm(weight, ord='fro')**2/np.linalg.norm(weight, ord=2)**2
+    try:
+        p_norm = np.linalg.norm(weight, ord='fro')**2/np.linalg.norm(weight, ord=2)**2
+    except:
+        p_norm = np.linalg.norm(weight.reshape(weight.shape[0], -1), ord='fro')**2/np.linalg.norm(weight.reshape(weight.shape[0], -1), ord=2)**2
     
     if len(weight.shape) - len(axis) == 0:
         params = [p_max.tolist(), p_mean.tolist(), p_sub.tolist(), p_median.tolist(), p_sum.tolist(), p_norm]

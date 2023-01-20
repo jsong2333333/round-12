@@ -143,7 +143,7 @@ class Detector(AbstractDetector):
 
         logging.info("Loading model for prediction")
         _, model_repr, model_class = load_model(model_filepath)
-        net = 'small_net' if int(model_class[3]) <=3 else 'large_net'
+        net = 'small_net' if int(model_class[3]) <= fe.NET_LEVEL else 'large_net'
 
         logging.info("Extracting model features")
         X = fe.get_model_features(model_repr, model_class)
