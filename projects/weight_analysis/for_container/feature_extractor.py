@@ -36,7 +36,9 @@ def get_model_features(model_repr: dict, model_class: str, infer=True):
     else:
         for k in ['fc1.weight', 'fc1.bias']:
             features += _get_stats_from_weight_features(model_repr[k])
-        features += _get_multiplied_weight_features(model_repr, ok).flatten().tolist()
+        mul_weight = _get_multiplied_weight_features(model_repr, ok)
+        features += mul_weight.flatten().tolist()
+        features += _get_fft_from_weight_features(mul_weight)
     if infer:
         return np.asarray([features])
     else:
@@ -101,7 +103,7 @@ if __name__ =='__main__':
     X_s, y_s, X_l, y_l = get_features_and_labels(model_repr_dict, model_ground_truth_dict)
 
     OUTPUT_DIR = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/extracted_source'
-    np.save(os.path.join(OUTPUT_DIR, 'fe_X_s.npy'), X_s)
-    np.save(os.path.join(OUTPUT_DIR, 'fe_y_s.npy'), y_s)
-    np.save(os.path.join(OUTPUT_DIR, 'fe_X_l.npy'), X_l)
-    np.save(os.path.join(OUTPUT_DIR, 'fe_y_l.npy'), y_l)
+    np.save(os.path.join(OUTPUT_DIR, 'fe_X.npy'), X_s)
+    np.save(os.path.join(OUTPUT_DIR, 'fe_y.npy'), y_s)
+    # np.save(os.path.join(OUTPUT_DIR, 'fe_X_l.npy'), X_l)
+    # np.save(os.path.join(OUTPUT_DIR, 'fe_y_l.npy'), y_l)
