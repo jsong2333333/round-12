@@ -36,9 +36,9 @@ def get_model_features(model_repr: dict, model_class: str, infer=True):
     else:
         for k in ['fc1.weight', 'fc1.bias']:
             features += _get_stats_from_weight_features(model_repr[k])
-        mul_weight = _get_multiplied_weight_features(model_repr, ok)
+        mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
         features += mul_weight.flatten().tolist()
-        features += _get_fft_from_weight_features(mul_weight)
+        # features += _get_fft_from_weight_features(mul_weight)
     if infer:
         return np.asarray([features])
     else:
