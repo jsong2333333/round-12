@@ -20,7 +20,6 @@ import feature_extractor as fe
 
 
 # There's a difference in the filepath when loading data from learned_parameter folder in the container, deleting '.' in './learned_parameters'
-ORIGINAL_LEARNED_PARAM_DIR = './learned_parameters'
 param_grid = {'gbm__learning_rate': np.arange(.005, .0251, .005), 
               'gbm__n_estimators': range(500, 1001, 100), 
               'gbm__max_depth': range(2, 5), 
@@ -66,10 +65,10 @@ class Detector(AbstractDetector):
         model_path_list = sorted([join(models_dirpath, model) for model in listdir(models_dirpath)])
         logging.info(f"Loading %d models", len(model_path_list))
 
-        model_repr_dict, model_ground_truth_dict = load_models_dirpath(model_path_list)
+        model_dict, model_repr_dict, model_ground_truth_dict = load_models_dirpath(model_path_list)
 
         logging.info("Extracting features from models")
-        X_s, y_s, X_l, y_l = fe.get_features_and_labels(model_repr_dict, model_ground_truth_dict)
+        X_s, y_s, X_l, y_l = fe.get_features_and_labels(model_dict, model_repr_dict, model_ground_truth_dict)
 
         logging.info("Automatically training GBM model")
         pipe = Pipeline(steps=[('gbm', GradientBoostingClassifier())])
@@ -109,10 +108,10 @@ class Detector(AbstractDetector):
         model_path_list = sorted([join(models_dirpath, model) for model in listdir(models_dirpath)])
         logging.info(f"Loading %d models", len(model_path_list))
 
-        model_repr_dict, model_ground_truth_dict = load_models_dirpath(model_path_list)
+        model_dict, model_repr_dict, model_ground_truth_dict = load_models_dirpath(model_path_list)
 
         logging.info("Extracting features from models")
-        X_s, y_s, X_l, y_l = fe.get_features_and_labels(model_repr_dict, model_ground_truth_dict)
+        X_s, y_s, X_l, y_l = fe.get_features_and_labels(model_dict, model_repr_dict, model_ground_truth_dict)
 
         logging.info("Fitting GBM model in manual mode")
         model = GradientBoostingClassifier(**self.gbm_kwargs, random_state=0)
@@ -142,11 +141,11 @@ class Detector(AbstractDetector):
         """
 
         logging.info("Loading model for prediction")
-        _, model_repr, model_class = load_model(model_filepath)
+        model, model_repr, model_class = load_model(model_filepath)
         net = 'small_net' if int(model_class[3]) <= fe.NET_LEVEL else 'large_net'
 
         logging.info("Extracting model features")
-        X = fe.get_model_features(model_repr, model_class)
+        X = fe.get_model_features(model, model_repr, model_class)
 
         logging.info('Loading classifier')
         potential_reconfig_model_filepath = join(self.learned_parameters_dirpath, 'clf.joblib')
@@ -154,7 +153,7 @@ class Detector(AbstractDetector):
             clf = joblib.load(potential_reconfig_model_filepath)
         else:
             logging.info('Using original classifier')
-            clf = joblib.load(join(ORIGINAL_LEARNED_PARAM_DIR, f'{net}_detector.joblib'))
+            clf = joblib.load(join(fe.ORIGINAL_LEARNED_PARAM_DIR, f'{net}_detector.joblib'))
     
         logging.info('Detecting trojan probability')
         try:

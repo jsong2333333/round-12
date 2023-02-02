@@ -1,30 +1,38 @@
 import os
 import numpy as np
+import torch
 
+PATH = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/for_container/learned_parameters/input_data.npy'
 DATA_PATH = '/scratch/data/TrojAI/cyber-pdf-dec2022-train/models/'
 NET_LEVEL = 7
+ORIGINAL_LEARNED_PARAM_DIR = '/learned_parameters'
 
 
-def get_features_and_labels(model_repr_dict: dict, model_ground_truth_dict: dict):
+def get_features_and_labels(model_dict: dict, model_repr_dict: dict, model_ground_truth_dict: dict):
     X, y = {'small_net':[], 'large_net':[]}, {'small_net':[], 'large_net':[]}
 
     for model_arch, model_reprs in model_repr_dict.items():
         model_ground_truth = model_ground_truth_dict[model_arch]
+        models = model_dict[model_arch]
+
         net = 'small_net'
         if int(model_arch[3]) > NET_LEVEL:
             net = 'large_net'
 
         y[net] += model_ground_truth
 
-        for model_repr in model_reprs:
-            X[net].append(get_model_features(model_repr, model_arch, infer=False))
+        for model, model_repr in zip(models, model_reprs):
+            X[net].append(get_model_features(model, model_repr, model_arch, infer=False))
     
     return np.asarray(X['small_net']), np.asarray(y['small_net']), np.asarray(X['large_net']), np.asarray(y['large_net'])
 
 
-def get_model_features(model_repr: dict, model_class: str, infer=True):
+def get_model_features(model, model_repr: dict, model_class: str, infer=True):
     features = []
     ok = _get_ordered_key(model_repr)
+
+    # input_data = torch.tensor(np.load(PATH), dtype=torch.float)
+    input_data = torch.tensor(np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'input_data.npy')), dtype=torch.float)
 
     if int(model_class[3]) > NET_LEVEL:  #larger nets (excluding Net2)
         norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
@@ -38,7 +46,7 @@ def get_model_features(model_repr: dict, model_class: str, infer=True):
             features += _get_stats_from_weight_features(model_repr[k])
         mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
         features += mul_weight.flatten().tolist()
-        # features += _get_fft_from_weight_features(mul_weight)
+        features += _get_sample_output(model, input_data)
     if infer:
         return np.asarray([features])
     else:
@@ -95,15 +103,29 @@ def _get_eigen_from_weight_features(weight: np.ndarray, sind=0, eind=45) -> list
     return s[sind:eind].tolist()
 
 
+def _get_sample_output(model, input_data: torch.FloatTensor) -> list:
+    output = model(input_data)
+    return output[:, 0].tolist()
+
+
 if __name__ =='__main__':
-    from utils.models import load_models_dirpath
+    from utils.models import load_model, load_models_dirpath, load_ground_truth
 
     models_dirpath = sorted([os.path.join(DATA_PATH, model_dirpath) for model_dirpath in os.listdir(DATA_PATH)])
-    model_repr_dict, model_ground_truth_dict = load_models_dirpath(models_dirpath)
-    X_s, y_s, X_l, y_l = get_features_and_labels(model_repr_dict, model_ground_truth_dict)
+    model_dict, model_repr_dict, model_ground_truth_dict = load_models_dirpath(models_dirpath)
+    X_s, y_s, X_l, y_l = get_features_and_labels(model_dict, model_repr_dict, model_ground_truth_dict)
+
+    # X, y = [], []
+    # for model_dirpath in models_dirpath:
+    #     ground_truth = load_ground_truth(model_dirpath)
+    #     model, model_repr, model_class = load_model(os.path.join(model_dirpath, 'model.pt'))
+    #     X.append(get_model_features(model, model_repr, model_class, infer=False))
+    #     y.append(ground_truth)
+    # X = np.asarray(X)
+    # y = np.asarray(y)
 
     OUTPUT_DIR = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/extracted_source'
-    np.save(os.path.join(OUTPUT_DIR, 'fe_X.npy'), X_s)
-    np.save(os.path.join(OUTPUT_DIR, 'fe_y.npy'), y_s)
+    np.save(os.path.join(OUTPUT_DIR, 'fe_X.npy'), X)
+    np.save(os.path.join(OUTPUT_DIR, 'fe_y.npy'), y)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_X_l.npy'), X_l)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_y_l.npy'), y_l)
