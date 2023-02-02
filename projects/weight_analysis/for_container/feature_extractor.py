@@ -5,7 +5,7 @@ import torch
 PATH = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/for_container/learned_parameters/input_data.npy'
 DATA_PATH = '/scratch/data/TrojAI/cyber-pdf-dec2022-train/models/'
 NET_LEVEL = 7
-ORIGINAL_LEARNED_PARAM_DIR = '/learned_parameters'
+ORIGINAL_LEARNED_PARAM_DIR = './learned_parameters'
 
 
 def get_features_and_labels(model_dict: dict, model_repr_dict: dict, model_ground_truth_dict: dict):
@@ -32,7 +32,7 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
     ok = _get_ordered_key(model_repr)
 
     # input_data = torch.tensor(np.load(PATH), dtype=torch.float)
-    input_data = torch.tensor(np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'input_data.npy')), dtype=torch.float)
+    # input_data = torch.tensor(np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'input_data.npy')), dtype=torch.float)
 
     if int(model_class[3]) > NET_LEVEL:  #larger nets (excluding Net2)
         norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
@@ -43,10 +43,10 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         features += _get_stats_from_weight_features(mul_weight)
     else:
         for k in ['fc1.weight', 'fc1.bias']:
-            features += _get_stats_from_weight_features(model_repr[k])
+            features += _get_stats_from_weight_features(model_repr[k], normalized=True)
         mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
         features += mul_weight.flatten().tolist()
-        features += _get_sample_output(model, input_data)
+        # features += _get_sample_output(model, input_data)
     if infer:
         return np.asarray([features])
     else:
@@ -65,29 +65,40 @@ def _get_multiplied_weight_features(model_repr: dict, ordered_keys: list, normal
     weight = None
     for ok in ordered_keys:
         if normalized:
-            weight = model_repr[ok] / np.linalg.norm(model_repr[ok],2) if weight is None else (weight @ (model_repr[ok]/ np.linalg.norm(model_repr[ok],2)))  
+            weight = model_repr[ok] / np.linalg.norm(model_repr[ok], 2) if weight is None else (weight @ (model_repr[ok]/ np.linalg.norm(model_repr[ok], 2)))  
         else:
             weight = model_repr[ok] if weight is None else weight @ model_repr[ok]
     return weight
 
 
-def _get_stats_from_weight_features(weight: np.ndarray, axis= (0,)) -> list:
+def _get_stats_from_weight_features(weight: np.ndarray, axis= (0,), normalized=False) -> list:
     params = []
+    
+    try:
+        norm = np.linalg.norm(weight, ord=2)
+    except:
+        norm = np.linalg.norm(weight.reshape(weight.shape[0], -1), ord=2)
+    
+    if not normalized:
+        norm = 1
+
+    weight /= norm
     p_max = np.amax(weight, axis=axis) 
     p_mean = np.mean(weight, axis=axis)
     p_median = np.median(weight, axis=axis) 
     p_sub = p_mean - p_median
     p_sum = np.sum(weight, axis=axis)
+
     try:
-        p_norm = np.linalg.norm(weight, ord='fro')**2/np.linalg.norm(weight, ord=2)**2
+        p_rank = np.linalg.norm(weight, ord='fro')**2/np.linalg.norm(weight, ord=2)**2
     except:
-        p_norm = np.linalg.norm(weight.reshape(weight.shape[0], -1), ord='fro')**2/np.linalg.norm(weight.reshape(weight.shape[0], -1), ord=2)**2
+        p_rank = np.linalg.norm(weight.reshape(weight.shape[0], -1), ord='fro')**2/np.linalg.norm(weight.reshape(weight.shape[0], -1), ord=2)**2
     
     if len(weight.shape) - len(axis) == 0:
-        params = [p_max.tolist(), p_mean.tolist(), p_sub.tolist(), p_median.tolist(), p_sum.tolist(), p_norm]
+        params = [p_max.tolist(), p_mean.tolist(), p_sub.tolist(), p_median.tolist(), p_sum.tolist(), p_rank]
     else:
         params = p_max.tolist() + p_mean.tolist() + p_sub.tolist() + p_median.tolist() + p_sum.tolist()
-        params.append(p_norm)
+        params.append(p_rank)
     return params
 
 
@@ -115,17 +126,8 @@ if __name__ =='__main__':
     model_dict, model_repr_dict, model_ground_truth_dict = load_models_dirpath(models_dirpath)
     X_s, y_s, X_l, y_l = get_features_and_labels(model_dict, model_repr_dict, model_ground_truth_dict)
 
-    # X, y = [], []
-    # for model_dirpath in models_dirpath:
-    #     ground_truth = load_ground_truth(model_dirpath)
-    #     model, model_repr, model_class = load_model(os.path.join(model_dirpath, 'model.pt'))
-    #     X.append(get_model_features(model, model_repr, model_class, infer=False))
-    #     y.append(ground_truth)
-    # X = np.asarray(X)
-    # y = np.asarray(y)
-
     OUTPUT_DIR = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/extracted_source'
-    np.save(os.path.join(OUTPUT_DIR, 'fe_X.npy'), X)
-    np.save(os.path.join(OUTPUT_DIR, 'fe_y.npy'), y)
+    np.save(os.path.join(OUTPUT_DIR, 'fe_X.npy'), X_s)
+    np.save(os.path.join(OUTPUT_DIR, 'fe_y.npy'), y_s)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_X_l.npy'), X_l)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_y_l.npy'), y_l)
