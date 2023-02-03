@@ -46,7 +46,9 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
             features += _get_stats_from_weight_features(model_repr[k], normalized=True)
         mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
         features += mul_weight.flatten().tolist()
-        # features += _get_sample_output(model, input_data)
+        # features += _get_fft_from_weight_features(mul_weight)
+        no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
+        features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
     if infer:
         return np.asarray([features])
     else:
@@ -126,8 +128,13 @@ if __name__ =='__main__':
     model_dict, model_repr_dict, model_ground_truth_dict = load_models_dirpath(models_dirpath)
     X_s, y_s, X_l, y_l = get_features_and_labels(model_dict, model_repr_dict, model_ground_truth_dict)
 
+    # model_arch = []
+    # for k, v in model_dict.items():
+    #     model_arch += [k]*len(v)
+
     OUTPUT_DIR = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/extracted_source'
     np.save(os.path.join(OUTPUT_DIR, 'fe_X.npy'), X_s)
     np.save(os.path.join(OUTPUT_DIR, 'fe_y.npy'), y_s)
+    # np.save(os.path.join(OUTPUT_DIR, 'fe_arch.npy'), model_arch)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_X_l.npy'), X_l)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_y_l.npy'), y_l)
