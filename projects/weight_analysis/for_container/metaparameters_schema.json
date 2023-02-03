@@ -3,7 +3,7 @@
     "title": "Trojan Detection Container (ICSI)",    
     "technique": "Weight Analysis with Gradient Boosting Classifier",
     "technique_description": "Extracts first layer weight stats, and the normalized matrix-multiplied-weights for each model; Trains the features on the tuned Gradient Boosting Classifier.",
-    "technique_changes": "Adding eigen values extracted from mat-mul weight matrix without the classification layer",
+    "technique_changes": "Adding fft score extracted from the mat-mul normalized weights",
     "commit_id": "",
     "repo_name": "https://github.com/jsong2333333/round-12",
     "required": [],
