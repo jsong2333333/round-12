@@ -2,7 +2,7 @@ import os
 import numpy as np
 import torch
 
-PATH = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/for_container/learned_parameters/input_data.npy'
+PATH = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/for_container/learned_parameters'
 DATA_PATH = '/scratch/data/TrojAI/cyber-pdf-dec2022-train/models/'
 NET_LEVEL = 7
 ORIGINAL_LEARNED_PARAM_DIR = './learned_parameters'
@@ -33,6 +33,11 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
 
     # input_data = torch.tensor(np.load(PATH), dtype=torch.float)
     # input_data = torch.tensor(np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'input_data.npy')), dtype=torch.float)
+    feature_ind = None
+    try:
+        feature_ind = _load_feature_ind(ORIGINAL_LEARNED_PARAM_DIR)
+    except:
+        feature_ind = _load_feature_ind(PATH)
 
     if int(model_class[3]) > NET_LEVEL:  #larger nets (excluding Net2)
         norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
@@ -49,10 +54,17 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         features += _get_fft_from_weight_features(mul_weight)
         # no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
         # features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
+
+    features = np.asarray(features)[feature_ind].tolist()
+
     if infer:
         return np.asarray([features])
     else:
         return features
+
+
+def _load_feature_ind(param_dirpath: str) -> list:
+    return np.load(os.path.join(param_dirpath, 'param_ind.npy')).tolist()
 
 
 def _get_ordered_key(model_repr: dict, weight_or_bias='weight', reversed=True) -> list:
