@@ -173,7 +173,8 @@ class Detector(AbstractDetector):
         try:
             # trojan_probability = clf.predict_proba(X)[0, -1]
             clf.eval()
-            X = torch.Tensor(X).float().unsqueeze(0).permute(2, 0, 1).to(DEVICE)
+            X = torch.Tensor(X).float().permute(2, 0, 1).to(DEVICE)
+            logging.info(f'X shape - {X.shape}')
             with torch.no_grad():
                 output = clf(X)
                 output = torch.sigmoid(output.reshape(-1))
