@@ -10,6 +10,7 @@ From: python:3.9
     ./archs.py /
     ./entrypoint.py /
     ./utils /
+    ./models.py /
 
 
 %post

@@ -31,13 +31,7 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
     features = []
     ok = _get_ordered_key(model_repr)
 
-    # input_data = torch.tensor(np.load(PATH), dtype=torch.float)
-    # input_data = torch.tensor(np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'input_data.npy')), dtype=torch.float)
-    feature_ind = None
-    try:
-        feature_ind = _load_feature_ind(ORIGINAL_LEARNED_PARAM_DIR)
-    except:
-        feature_ind = _load_feature_ind(PATH)
+    # feature_ind = np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'ind_fft.npy'))
 
     if int(model_class[3]) > NET_LEVEL:  #larger nets (excluding Net2)
         norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
@@ -47,20 +41,20 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         features += _get_eigen_from_weight_features(mul_weight)
         features += _get_stats_from_weight_features(mul_weight)
     else:
-        for k in ['fc1.weight', 'fc1.bias']:
-            features += _get_stats_from_weight_features(model_repr[k], normalized=True)
-        mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
+        # for k in ['fc1.weight', 'fc1.bias']:
+        #     features += _get_stats_from_weight_features(model_repr[k], normalized=True)
+        mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=False)
         features += mul_weight.flatten().tolist()
         # features += _get_fft_from_weight_features(mul_weight)
-        no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
-        features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
+        # no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
+        # features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
 
-    features = np.asarray(features)[feature_ind].tolist()
+    # features = np.asarray(features)[feature_ind].tolist()
 
     if infer:
-        return np.asarray([features])
+        return np.asarray([features[211:250]])
     else:
-        return features
+        return features[211:250]
 
 
 def _load_feature_ind(param_dirpath: str) -> list:
@@ -75,11 +69,11 @@ def _get_ordered_key(model_repr: dict, weight_or_bias='weight', reversed=True) -
         return keys
 
 
-def _get_multiplied_weight_features(model_repr: dict, ordered_keys: list, normalized=False) -> np.ndarray:
+def _get_multiplied_weight_features(model_repr: dict, ordered_keys: list, normalized=False, ord=2) -> np.ndarray:
     weight = None
     for ok in ordered_keys:
         if normalized:
-            weight = model_repr[ok] / np.linalg.norm(model_repr[ok], 2) if weight is None else (weight @ (model_repr[ok]/ np.linalg.norm(model_repr[ok], 2)))  
+            weight = model_repr[ok] / np.linalg.norm(model_repr[ok], ord=ord) if weight is None else (weight @ (model_repr[ok]/ np.linalg.norm(model_repr[ok], ord=ord)))  
         else:
             weight = model_repr[ok] if weight is None else weight @ model_repr[ok]
     return weight
@@ -145,8 +139,8 @@ if __name__ =='__main__':
     #     model_arch += [k]*len(v)
 
     OUTPUT_DIR = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/extracted_source'
-    np.save(os.path.join(OUTPUT_DIR, 'fe_X.npy'), X_s)
-    np.save(os.path.join(OUTPUT_DIR, 'fe_y.npy'), y_s)
+    np.save(os.path.join(OUTPUT_DIR, 'X.npy'), X_s)
+    np.save(os.path.join(OUTPUT_DIR, 'y.npy'), y_s)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_arch.npy'), model_arch)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_X_l.npy'), X_l)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_y_l.npy'), y_l)

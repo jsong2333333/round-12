@@ -27,6 +27,9 @@ param_grid = {'gbm__learning_rate': np.arange(.005, .0251, .005),
               'gbm__min_samples_split': range(20, 101, 10),
               'gbm__min_samples_leaf': range(10, 51, 5)}
 
+            
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 class Detector(AbstractDetector):
     def __init__(self, metaparameter_filepath, learned_parameters_dirpath, scale_parameters_filepath):
@@ -57,6 +60,11 @@ class Detector(AbstractDetector):
         Args:
             models_dirpath: str - Path to the list of model to use for training
         """
+
+        logging.info('Configuration Mode Currently Not Available')
+
+        return
+
         # Create the learned parameter folder if needed
         if not exists(self.learned_parameters_dirpath):
             makedirs(self.learned_parameters_dirpath)
@@ -100,6 +108,11 @@ class Detector(AbstractDetector):
         Args:
             models_dirpath: str - Path to the list of model to use for training
         """
+
+        logging.info('Configuration Mode Currently Not Available')
+
+        return
+
         # Create the learned parameter folder if needed
         if not exists(self.learned_parameters_dirpath):
             makedirs(self.learned_parameters_dirpath)
@@ -153,18 +166,25 @@ class Detector(AbstractDetector):
             clf = joblib.load(potential_reconfig_model_filepath)
         else:
             logging.info('Using original classifier')
-            clf = joblib.load(join(fe.ORIGINAL_LEARNED_PARAM_DIR, f'{net}_detector.joblib'))
+            # clf = joblib.load(join(fe.ORIGINAL_LEARNED_PARAM_DIR, f'{net}_detector.joblib'))
+            clf = torch.load(join(fe.ORIGINAL_LEARNED_PARAM_DIR, 'best_rnn_model.pt')).to(DEVICE)
     
         logging.info('Detecting trojan probability')
         try:
-            trojan_probability = clf.predict_proba(X)
+            # trojan_probability = clf.predict_proba(X)[0, -1]
+            clf.eval()
+            X = torch.Tensor(X).float().unsqueeze(0).permute(2, 0, 1).to(DEVICE)
+            with torch.no_grad():
+                output = clf(X)
+                output = torch.sigmoid(output.reshape(-1))
+            trojan_probability = output.item()
         except:
             logging.warning('Not able to detect such model class')
             with open(result_filepath, 'w') as fh:
                 fh.write("{}".format(0.50))
             return
 
-        logging.info('Trojan Probability of this model is: {}'.format(trojan_probability[0, -1]))
+        logging.info('Trojan Probability of this model is: {}'.format(trojan_probability))
     
         with open(result_filepath, 'w') as fh:
-            fh.write("{}".format(trojan_probability[0, -1]))
+            fh.write("{}".format(trojan_probability))
