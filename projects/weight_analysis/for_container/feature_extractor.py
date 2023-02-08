@@ -44,9 +44,9 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         # for k in ['fc1.weight', 'fc1.bias']:
         #     features += _get_stats_from_weight_features(model_repr[k], normalized=True)
         mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=False)
-        features.append(mul_weight.flatten().tolist()[200:270])
+        features.append(mul_weight.flatten().tolist()[200:260])
         norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
-        features.append(norm_mul_weight.flatten().tolist()[200:270])
+        features.append(norm_mul_weight.flatten().tolist()[200:260])
         # features += _get_fft_from_weight_features(mul_weight)
         # no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
         # features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
