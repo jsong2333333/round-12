@@ -46,8 +46,8 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
         features += mul_weight.flatten().tolist()
         # features += _get_fft_from_weight_features(mul_weight)
-        # no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
-        # features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
+        no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
+        features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
         # norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
         # features.append(norm_mul_weight.flatten().tolist()[200:260])
 
