@@ -67,9 +67,9 @@ class tauGRU(nn.Module):
         for t, x in enumerate(input):
             
             if self.tau == 0:
-                h = self.cell(x, self.dropout(h), x, self.dropout(h))            
+                h = self.cell(self.dropout(x), self.dropout(h), self.dropout(x), self.dropout(h))            
             else:
-                h = self.cell(x, self.dropout(h), x_delay, self.dropout(h_delay))
+                h = self.cell(self.dropout(x), self.dropout(h), self.dropout(x_delay), self.dropout(h_delay))
 
             h_history.append(h)
             x_history.append(x)
