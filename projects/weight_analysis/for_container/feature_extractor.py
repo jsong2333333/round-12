@@ -31,7 +31,7 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
     features = []
     ok = _get_ordered_key(model_repr)
 
-    # feature_ind = np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'ind_fft.npy'))
+    feature_ind = np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'ind.npy'))
 
     if int(model_class[3]) > NET_LEVEL:  #larger nets (excluding Net2)
         norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
@@ -41,17 +41,17 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         features += _get_eigen_from_weight_features(mul_weight)
         features += _get_stats_from_weight_features(mul_weight)
     else:
-        # for k in ['fc1.weight', 'fc1.bias']:
-        #     features += _get_stats_from_weight_features(model_repr[k], normalized=True)
-        mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=False)
-        features.append(mul_weight.flatten().tolist()[200:260])
-        norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
-        features.append(norm_mul_weight.flatten().tolist()[200:260])
+        for k in ['fc1.weight', 'fc1.bias']:
+            features += _get_stats_from_weight_features(model_repr[k], normalized=True)
+        mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
+        features += mul_weight.flatten().tolist()
         # features += _get_fft_from_weight_features(mul_weight)
         # no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
         # features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
+        # norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
+        # features.append(norm_mul_weight.flatten().tolist()[200:260])
 
-    # features = np.asarray(features)[feature_ind].tolist()
+    features = np.asarray(features)[feature_ind].tolist()
 
     if infer:
         return np.asarray([features])
