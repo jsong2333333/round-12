@@ -2,6 +2,16 @@ import torch
 import torch.nn as nn
 import math
 
+def get_device():
+    """Get a gpu if available."""
+    if torch.cuda.device_count() > 0:
+        device = torch.device('cuda')
+        print("Connected to a GPU")
+    else:
+        print("Using the CPU")
+        device = torch.device('cpu')
+    return device
+
 class tauGRU_Cell(nn.Module):
     def __init__(self, ninp, nhid, dt, alpha, beta):
         super(tauGRU_Cell, self).__init__()
@@ -35,7 +45,16 @@ class tauGRU_Cell(nn.Module):
         D = torch.sigmoid(self.W4(h_delay) + self.U4(x_delay))
         A = torch.tanh(self.W1(h) + self.U1(x)) 
         B = torch.tanh(self.W2(h_delay) + self.U2(x_delay))
-        h = (1-C) * h + C * (self.beta * A + self.alpha * D * B)      
+        
+        if self.eval():
+            h = (1-C) * h + C * (self.beta * A + self.alpha * D * B)  
+
+        else:
+            add_noise = 0.5 * torch.randn(h.shape[0], h.shape[1]).float().to(get_device())
+            mult_noise = 0.05 * torch.rand(h.shape[0], h.shape[1]).float().to(get_device()) + (1-0.05)
+        
+            h = (1-C) * h + mult_noise * C * (self.beta * A + self.alpha * D * B ) + add_noise
+
         return h
 
 class tauGRU(nn.Module):
@@ -70,6 +89,8 @@ class tauGRU(nn.Module):
                 h = self.cell(self.dropout(x), self.dropout(h), self.dropout(x), self.dropout(h))            
             else:
                 h = self.cell(self.dropout(x), self.dropout(h), self.dropout(x_delay), self.dropout(h_delay))
+
+
 
             h_history.append(h)
             x_history.append(x)

@@ -3,7 +3,7 @@
     "title": "Trojan Detection Container (ICSI)",    
     "technique": "Weight Analysis with Gradient Boosting Classifier",
     "technique_description": "Extracts normalized matrix-multiplied-weights for each model, run through feature selection, and train the RNN model classifier.",
-    "technique_changes": "Trainng the RNN model for classification with more tuning. Currently doesn't support configuration mode.",
+    "technique_changes": "Fixing a bug for the RNN model that's previously submitted. Currently doesn't support configuration mode.",
     "commit_id": "",
     "repo_name": "https://github.com/jsong2333333/round-12",
     "required": [],
