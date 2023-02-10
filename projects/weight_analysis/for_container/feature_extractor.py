@@ -39,16 +39,18 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         features += _get_eigen_from_weight_features(mul_weight)
         features += _get_stats_from_weight_features(mul_weight)
     else:
-        # for k in ['fc1.weight', 'fc1.bias']:
-        #     features += _get_stats_from_weight_features(model_repr[k], normalized=True)
-        mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=False)
+        for k in ['fc1.weight', 'fc1.bias']:
+            features += _get_stats_from_weight_features(model_repr[k], normalized=True)
+        # mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=False)
         # features += mul_weight.flatten().tolist()
+        norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
+        features += norm_mul_weight.flatten().tolist()
+        features += _get_stats_from_weight_features(norm_mul_weight, axis=(0, 1))
         # features += _get_fft_from_weight_features(mul_weight)
         # no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
         # features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
-        norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
-        features.append(mul_weight.flatten().tolist()[200:260])
-        features.append(norm_mul_weight.flatten().tolist()[200:260])
+        # features.append(mul_weight.flatten().tolist()[200:260])
+        # features.append(norm_mul_weight.flatten().tolist()[200:260])
 
     # feature_ind = np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'ind.npy'))
     # features = np.asarray(features)[feature_ind].tolist()
@@ -100,15 +102,19 @@ def _get_stats_from_weight_features(weight: np.ndarray, axis= (0,), normalized=F
     p_sum = np.sum(weight, axis=axis)
 
     try:
-        p_rank = np.linalg.norm(weight, ord='fro')**2/np.linalg.norm(weight, ord=2)**2
+        p_rank = [np.linalg.norm(weight, ord='fro')**2/np.linalg.norm(weight, ord=2)**2]
+        for ord in [2, 'fro', np.Inf, -np.Inf, 'nuc']:
+            p_rank.append(np.linalg.norm(weight, ord=ord))
     except:
-        p_rank = np.linalg.norm(weight.reshape(weight.shape[0], -1), ord='fro')**2/np.linalg.norm(weight.reshape(weight.shape[0], -1), ord=2)**2
+        reshaped_weight = weight.reshape(weight.shape[0], -1)
+        p_rank = [np.linalg.norm(reshaped_weight, ord='fro')**2/np.linalg.norm(reshaped_weight, ord=2)**2]
+        for ord in [2, 'fro', np.Inf, -np.Inf, 'nuc']:
+            p_rank.append(np.linalg.norm(reshaped_weight, ord=ord))
     
     if len(weight.shape) - len(axis) == 0:
-        params = [p_max.tolist(), p_mean.tolist(), p_sub.tolist(), p_median.tolist(), p_sum.tolist(), p_rank]
+        params = [p_max.tolist(), p_mean.tolist(), p_sub.tolist(), p_median.tolist(), p_sum.tolist()] + p_rank
     else:
-        params = p_max.tolist() + p_mean.tolist() + p_sub.tolist() + p_median.tolist() + p_sum.tolist()
-        params.append(p_rank)
+        params = p_max.tolist() + p_mean.tolist() + p_sub.tolist() + p_median.tolist() + p_sum.tolist() + p_rank
     return params
 
 
