@@ -39,21 +39,22 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         features += _get_eigen_from_weight_features(mul_weight)
         features += _get_stats_from_weight_features(mul_weight)
     else:
-        for k in ['fc1.weight', 'fc1.bias']:
+        final_layer = ok[0].split('.')[0]
+        for k in ['fc1.weight', 'fc1.bias', f'{final_layer}.weight', f'{final_layer}.bias']:
             features += _get_stats_from_weight_features(model_repr[k], normalized=True)
         # mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=False)
         # features += mul_weight.flatten().tolist()
         norm_mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=True)
         features += norm_mul_weight.flatten().tolist()
-        features += _get_stats_from_weight_features(norm_mul_weight, axis=(0, 1))
+        # features += _get_stats_from_weight_features(norm_mul_weight, axis=(0, 1))
         # features += _get_fft_from_weight_features(mul_weight)
         # no_final_layer_mul_weight = _get_multiplied_weight_features(model_repr, ok[1:], normalized=True)
         # features += _get_eigen_from_weight_features(no_final_layer_mul_weight, 0, 38)
         # features.append(mul_weight.flatten().tolist()[200:260])
         # features.append(norm_mul_weight.flatten().tolist()[200:260])
 
-    # feature_ind = np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'ind.npy'))
-    # features = np.asarray(features)[feature_ind].tolist()
+    feature_ind = np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, 'ind.npy'))
+    features = np.asarray(features)[feature_ind].tolist()
 
     if infer:
         return np.asarray([features])
@@ -146,9 +147,12 @@ if __name__ =='__main__':
     # for k, v in model_dict.items():
     #     model_arch += [k]*len(v)
 
-    OUTPUT_DIR = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/extracted_source'
-    np.save(os.path.join(OUTPUT_DIR, 'X.npy'), X_s)
-    np.save(os.path.join(OUTPUT_DIR, 'y.npy'), y_s)
+    print(X_s.shape)
+    print(X_s[0, :100])
+
+    # OUTPUT_DIR = '/scratch/jialin/cyber-pdf-dec2022/projects/weight_analysis/extracted_source'
+    # np.save(os.path.join(OUTPUT_DIR, 'X.npy'), X_s)
+    # np.save(os.path.join(OUTPUT_DIR, 'y.npy'), y_s)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_arch.npy'), model_arch)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_X_l.npy'), X_l)
     # np.save(os.path.join(OUTPUT_DIR, 'fe_y_l.npy'), y_l)
