@@ -1,22 +1,22 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Trojan Detection Container (ICSI)",    
-    "technique": "Weight Analysis with Gradient Boosting Classifier",
-    "technique_description": "Extracts normalized first layer weight and matrix statistics, matrix-multiplied-weights, and mat-mul statistics for each model, and train the GBM model classifier.",
-    "technique_changes": "Adding the weight and bias statistics from the last layer of each model and did feature selection",
-    "commit_id": "",
-    "repo_name": "https://github.com/jsong2333333/round-12",
-    "required": [],
-    "additionalProperties": false,
-    "type": "object",
-    "properties": {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trojan Detection Container (ICSI)",    
+  "technique": "Weight Analysis with Gradient Boosting Classifier",
+  "technique_description": "Extracts the normalized first and final layer weights statistics, normalized matrix-multiplied-weights for each model, run through feature selection, and tune the GBM classifier.",
+  "technique_changes": "Omit the bias statistics",
+  "commit_id": "",
+  "repo_name": "https://github.com/jsong2333333/round-12",
+  "required": [],
+  "additionalProperties": false,
+  "type": "object",
+  "properties": {
     "train_gbm_param_learning_rate": {
-      "description": "How fast the classifier is learning.",
-      "type": "number",
-      "minimum": 0.001,
-      "maximum": 1,
-      "suggested_minimum": 0.005,
-      "suggested_maximum": 0.05
+        "description": "How fast the classifier is learning.",
+        "type": "number",
+        "minimum": 0.001,
+        "maximum": 1,
+        "suggested_minimum": 0.005,
+        "suggested_maximum": 0.05
       },
     "train_gbm_param_n_estimators": {
         "description": "The number of boosting stages.",
@@ -58,5 +58,5 @@
         "suggested_minimum": 20,
         "suggested_maximum": 700
       }
-    }
   }
+}

@@ -40,7 +40,7 @@ def get_model_features(model, model_repr: dict, model_class: str, infer=True):
         features += _get_stats_from_weight_features(mul_weight)
     else:
         final_layer = ok[0].split('.')[0]
-        for k in ['fc1.weight', 'fc1.bias', f'{final_layer}.weight', f'{final_layer}.bias']:
+        for k in ['fc1.weight', f'{final_layer}.weight']:
             features += _get_stats_from_weight_features(model_repr[k], normalized=True)
         # mul_weight = _get_multiplied_weight_features(model_repr, ok, normalized=False)
         # features += mul_weight.flatten().tolist()
